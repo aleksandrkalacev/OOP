@@ -1,35 +1,31 @@
 import java.math.BigDecimal;
+import java.time.Period;
 
 public enum Tarif {
 
-
-
-    DISPOSABLE("Разовый"){
-        public BigDecimal PeriodCalculation(long period){
-            long days = period;
+    DISPOSABLE("Разовый") {
+        @Override
+        public BigDecimal periodCalculation(Period period) {
+            long days = toDays(period);
             return BigDecimal.valueOf(1000).multiply(BigDecimal.valueOf(days));
-
         }
     },
 
-    MONTHLY("Месячный"){
-        public BigDecimal PeriodCalculation(long period){
-            long days = period;
+    MONTHLY("Месячный") {
+        @Override
+        public BigDecimal periodCalculation(Period period) {
+            long days = toDays(period);
             return BigDecimal.valueOf(70).multiply(BigDecimal.valueOf(days));
-
         }
     },
 
-    STUDENT("Студентческий"){
-        public BigDecimal PeriodCalculation(long period){
-            long days = period;
+    STUDENT("Студенческий") {
+        @Override
+        public BigDecimal periodCalculation(Period period) {
+            long days = toDays(period);
             return BigDecimal.valueOf(50).multiply(BigDecimal.valueOf(days));
-
         }
     };
-
-
-
 
     private final String title;
 
@@ -37,15 +33,13 @@ public enum Tarif {
         this.title = title;
     }
 
-    public String getTitle(){
+    public abstract BigDecimal periodCalculation(Period period);
+
+    public String getTitle() {
         return this.title;
     }
 
-
-
-
-
-
-
-
+    protected long toDays(Period period) {
+        return period.getDays() + (period.getMonths() * 30L) + (period.getYears() * 365L);
+    }
 }

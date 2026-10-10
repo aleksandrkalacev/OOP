@@ -1,6 +1,4 @@
-import java.nio.file.LinkOption;
 import java.time.LocalDate;
-
 
 public class Frozen {
     private LocalDate start;
@@ -26,7 +24,6 @@ public class Frozen {
     public void setEnd(LocalDate end) {
         this.end = end;
     }
-
 
     public boolean inTheFreezer(LocalDate date){
         return !date.isBefore(start) && !date.isAfter(end);

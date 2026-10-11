@@ -9,7 +9,6 @@ class SubscriptionExpiredException extends RuntimeException {
     }
 }
 
-// 3. Ошибка использования замороженного абонемента
 class SubscriptionFrozenException extends RuntimeException {
     public SubscriptionFrozenException(String message) {
         super(message);

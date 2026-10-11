@@ -1,4 +1,7 @@
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDate;
+import java.time.Period;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -32,6 +35,48 @@ public class Subscription {
         }
         return false;
     }
+
+    public boolean tariffEnd(long start, long end){
+        return (end - start) < 0;
+    }
+
+    public BigDecimal calculChangeTariff(Tarif nTar){
+        long daysNow = LocalDate.now().toEpochDay();
+        long endSubDays = endSubs.toEpochDay();
+        long startSub = startSubs.toEpochDay();
+        long remDays = endSubDays - daysNow;
+        long totalDays = endSubDays - startSub;
+
+
+        BigDecimal oldPrice = tarif.periodCalculation(Period.ofMonths(1));
+        BigDecimal oldPrDay = oldPrice.divide(BigDecimal.valueOf(totalDays),4, RoundingMode.HALF_UP);
+        BigDecimal returnMoney = oldPrDay.multiply(BigDecimal.valueOf(remDays));
+
+        BigDecimal newPr = nTar.periodCalculation(Period.ofDays((int) remDays));
+        return newPr.subtract(returnMoney).setScale(2, RoundingMode.HALF_UP);
+    }
+
+    public BigDecimal calculateRefundAmount() {
+        long todayDays = LocalDate.now().toEpochDay();
+        long endDays = endSubs.toEpochDay();
+        long startDays = startSubs.toEpochDay();
+
+        long remainder = endDays - todayDays;
+        long durationSubs = endDays - startDays;
+
+        BigDecimal fullPrice = tarif.periodCalculation(Period.ofMonths(1));
+        BigDecimal pricePerDay = fullPrice.divide(BigDecimal.valueOf(durationSubs), 4, RoundingMode.HALF_UP);
+        return pricePerDay.multiply(BigDecimal.valueOf(remainder)).setScale(2, RoundingMode.HALF_UP);
+    }
+
+
+    public void applyFreeze(int days) {
+        LocalDate today = LocalDate.now();
+        LocalDate endFreeze = today.plusDays(days);
+        frozenHistory.add(new Frozen(today, endFreeze));
+        this.endSubs = this.endSubs.plusDays(days);
+    }
+
 
     public Tarif getTarif() {
         return this.tarif;

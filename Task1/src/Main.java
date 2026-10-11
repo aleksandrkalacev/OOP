@@ -30,8 +30,8 @@ public class Main {
         System.out.println("Вы успешно добавлены в систему, теперь можете выбрать свой тариф");
 
         System.out.println("1)Разовое посещение, цена 1000р: \n" +
-                "2)Месячный абонимент, цена 2100р\n" +
-                "3)Студенческий, цена 1500р");
+                            "2)Месячный абонимент, цена 2100р\n" +
+                            "3)Студенческий, цена 1500р");
         int tar = sc.nextInt();
 
 
@@ -86,27 +86,17 @@ public class Main {
                             break;
                         }
 
-                        long days = LocalDate.now().toEpochDay();
-                        long start = sub.getStartSubs().toEpochDay();
-                        long end = sub.getEndSubs().toEpochDay();
-
-                        long remainder = end - days;
-                        long durationSubs = end - start;
-
-                        if (remainder <= 0) {
-                            System.out.println("Срок подписки истек");
+                        if(sub.tariffEnd(LocalDate.now().toEpochDay(),sub.getEndSubs().toEpochDay())){
+                            System.out.println("Срок подпсиски подошел к концу");
                             sub = null;
                             break;
                         }
 
-                        BigDecimal fullPrice = sub.getTarif().periodCalculation(java.time.Period.ofMonths(1));
-                        BigDecimal pricePerDay = fullPrice.divide(BigDecimal.valueOf(durationSubs), 4, java.math.RoundingMode.HALF_UP);
-                        BigDecimal refundSum = pricePerDay.multiply(BigDecimal.valueOf(remainder)).setScale(2, java.math.RoundingMode.HALF_UP);
+                        BigDecimal returnMoney = sub.calculateRefundAmount();
+                        client.setBalance(client.getBalance().add(returnMoney));
 
-                        client.setBalance(client.getBalance().add(refundSum));
-
-                        client.getHistory().add("Отмена подписки, " + nameUser + " " + LastNameUser + ". Вернулось: " + refundSum + " руб. Дата: " + LocalDate.now());
-                        System.out.println("Подписка успешно отменена! Возвращено " + refundSum + " руб. Баланс: " + client.getBalance());
+                        client.getHistory().add("\nОтмена подписки, пользователя " + nameUser + " " + LastNameUser + ". " + LocalDate.now());
+                        System.out.println("Подписка успешно отменена! Возвращено " + returnMoney + " руб. Баланс: " + client.getBalance());
 
                         sub = null;
                         break;
@@ -117,16 +107,10 @@ public class Main {
                             break;
                         }
 
-                        LocalDate today = LocalDate.now();
-                        LocalDate endFreeze = today.plusDays(5);
+                        sub.applyFreeze(5);
 
-                        Frozen f = new Frozen(today, endFreeze);
-                        sub.getFreezes().add(f);
-
-                        sub.setEndSubs(sub.getEndSubs().plusDays(5));
-
-                        client.getHistory().add("Заморозка подписки на 5 дней. Дата окончания сдвинута на: " + sub.getEndSubs() + ". Дата: " + today);
-                        System.out.println("Подписка успешно замороженна до " + endFreeze + "! Срок окончания сдвинут на " + sub.getEndSubs());
+                        client.getHistory().add("Заморозка подписки на 5 дней. Дата окончания сдвинута на: " + sub.getEndSubs() + ". Дата: " + LocalDate.now());
+                        System.out.println("Подписка успешно замороженна до " + sub.getEndSubs() + "! Срок окончания сдвинут на " + sub.getEndSubs());
                         break;
 
                     case 3:
@@ -134,13 +118,11 @@ public class Main {
                             System.out.println("Подписки не обнаружено");
                             break;
                         }
-                        long daysNow = LocalDate.now().toEpochDay();
-                        long endSubDays = sub.getEndSubs().toEpochDay();
-                        long remDays = endSubDays - daysNow;
 
 
-                        if (remDays <= 0) throw new SubscriptionExpiredException("Срок подписки истек, сменить тариф нельзя.");
-
+                        if (sub.tariffEnd(LocalDate.now().toEpochDay(), sub.getEndSubs().toEpochDay())) {
+                            throw new SubscriptionExpiredException("Срок подписки истек, сменить тариф нельзя.");
+                        }
 
                         System.out.println("Выберите новый тариф: 1) Разовый 2) Месячный 3) Студенческий");
                         int newTarIndex = sc.nextInt();
@@ -158,14 +140,7 @@ public class Main {
                         }
 
 
-                        BigDecimal oldPrice = sub.getTarif().periodCalculation(java.time.Period.ofMonths(1));
-                        long totalDaysSub = sub.getEndSubs().toEpochDay() - sub.getStartSubs().toEpochDay();
-                        BigDecimal oldPriceDay = oldPrice.divide(BigDecimal.valueOf(totalDaysSub), 4, java.math.RoundingMode.HALF_UP);
-                        BigDecimal refundPart = oldPriceDay.multiply(BigDecimal.valueOf(remDays));
-
-
-                        BigDecimal newPrice = newTarif.periodCalculation(java.time.Period.ofDays((int) remDays));
-                        BigDecimal diff = newPrice.subtract(refundPart).setScale(2, java.math.RoundingMode.HALF_UP);
+                        BigDecimal diff = sub.calculChangeTariff(newTarif);
 
 
                         if (diff.compareTo(BigDecimal.ZERO) > 0) {

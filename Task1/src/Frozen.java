@@ -25,6 +25,14 @@ public class Frozen {
         this.end = end;
     }
 
+    /**
+     * Проверяет, попадает ли указанная дата в текущий интервал заморозки абонемента.
+     * Границы интервала (день начала и день окончания) включаются в проверку.
+     *
+     * @param date Проверяемая дата.
+     * @return true, если дата находится внутри диапазона заморозки; false в противном случае.
+     */
+
     public boolean inTheFreezer(LocalDate date){
         return !date.isBefore(start) && !date.isAfter(end);
     }
